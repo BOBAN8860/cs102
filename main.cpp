@@ -1,150 +1,211 @@
-//
-//  main.cpp
-//  pointer
-//
-//  Created by 博班 on 11/18/17.
-//  Copyright © 2017 banban. All rights reserved.
-// to calcules how much student had seen moives average number
+// File: retrieve_form_OOP_2.cpp
+// Author: bo ban
+// cs102 Online
+// Date:11/25/17
+// Description: This program retrieves three form fields and sends the result
+//                back to the browser
 
-#include <iostream>
-#include <cstdio> //c language and stdio just stands for standard input/output
+#include "Webapps.h"
+#include "Fileapps.h"
+
 #include <iomanip>
+#include <iostream>
+#include <cstring>
+#include <cstdlib>
+#include <string>
+#include <cctype>   //for isalnum()
 
 using namespace std;
 
+//const int cnt = 5;    //cnt should be set to the number of fields the html form contains
 
-//declare prototype function just need declare 里面的 varsible type*********
-int* create_array(int);//just int, this is a number********* and !!! this is dynamic array
-void enter_data(int*,int);
-float find_average(int*,int );// float type needed*********
-void show_array(int*,int);
-
+WebApps wo;
+FileApps fo("survey.txt");  //fo for file object
+void build_form();
+void save_data_line(string);
+string prepare_vote(int);
+void read_data();
+void display_result(string *);
+const int cnt = wo.how_many(wo.get_qs());    //cnt should be set to the number of fields the html form contains
+//const int cnt = wo.get_cnt();
+int * create_int_array(int);
+//int * data_array = create_int_array();
 int main()
 {
-    int *dyn_array;//remember this is *!!!!
-    int students;
-    float avrg;
-    
-    do
+    //const int cnt = wo.get_cnt();
+    FIELDS * name_value_pairs = wo.create_array(cnt);
+    //const int cnt = wo.get_cnt();
+    if (cnt != 0)
     {
-        cout << "had better input a small number"<< "\n";
-        cout << "How many students will you enter? ";
-        //cout << "had better input a small number";
-        cin >> students;
-    }while ( students <= 0 );
-    
-    dyn_array = create_array( students ); //No.1 function
-    //this function creates a dynamic array
-    //and returns its pointer
-    enter_data( dyn_array, students ); //No.2 function
-    //use 'pointer' notation in this function to
-    //access array elements
-    //accept only numbers 0-100 for movie seen
-    avrg = find_average( dyn_array, students );  //No.3 function
-    //use 'pointer' notation in this function to
-    //access array elements
-    
-    //cout << setprecision (2) << fixed; // need form as 0.00
-    //movie number is int
-    cout << "The array is:" << endl << endl;
-    show_array( dyn_array, students);  //4 function
-    
-    cout << setprecision (2) << fixed; // need form as 0.00
-    cout << endl;
-    cout << "The average is " << avrg << "\n";
-    
-    delete [] dyn_array;
+        cout << "debug with get_qs(): " << wo.get_qs() << "<br>" << endl;
+        cout << "debug with get_cnt(): " << wo.get_cnt() << "<br>" << endl;
+        cout << "debug with cnt != 0<br>" << endl;
+        //call function to prepare vote
+        string data_line = prepare_vote(cnt);
+        wo.parse(wo.get_qs(), name_value_pairs);
+        cout << "name: " << name_value_pairs[0].name << "<br>" << endl;
+        cout << "value: " << name_value_pairs[0].value << "<br>" << endl;
+        cout << "debug with data_line: " << data_line << "<br>" << endl;
+        //save_data_line() appends the vote to the end of survey.txt
+        fo.save_data_line(data_line);
+        //read_data() opens survey.txt and populates array data_array[]
+        fo.read_data ();
+        cout << "debug past read_data()<br>" << endl;
+        //array data_array[] is now ours (contains all of the votes as strings
+        string* data_array = fo.get_data_array();
+        build_form();
+        //display_result(data_array);
+        /*
+        cout << "<br>" << "\n";
+        for (int i = 0; i <= fo.get_survey_txt_cnt();i++)
+        {
+        cout << "From main() debug with "<< i <<"th element: " << data_array[i] << "<br>" << endl;
+        }
+        //FIELDS * name_value_pairs = wo.create_array(wo.get_cnt());
+        //string vote = wo.parse(wo.get_qs(), name_value_pairs);
+        */
+        display_result(data_array);
+        
+    }
+    else
+    {
+        build_form();
+        fo.read_data();
+        string* data_array = fo.get_data_array();
+        display_result(data_array);
+    }
     return 0;
 }
-//***********function use fun_ named**************
-
-int* create_array(int fun_students)//line 16
-//Assigning to 'int *' from incompatible type 'void'*********
-//students is int*********
-//this function array is dynmically*********
-//http://www.cnblogs.com/richardcpp/archive/2012/10/15/2724406.html
-//http://blog.csdn.net/u012234115/article/details/36686457
-//https://songlee24.github.io/2014/07/28/cpp-dynamic-array/
+    ////////////functions/////////////
+void build_form ()
 {
-    int* student_array; //dynmically need *
-    //require pointer instead of regular array method
-    student_array =new int[fun_students];
-    //declare new dynmically array*********
-    //return *student_array[fun_students];
-    return student_array;
+    cout << "<html><head><title>Survey Vote</title></head>" <<
+    "<body>\n" <<
+    "<form action=\"survey.cgi\" method=\"GET\">\n" <<
+    "     which your favorite fruit?<br>\n" <<
+    "     <a href= http://zp1.douguo.net/upload/dish/5/6/4/600_5623067138a010967e870497b25ef3a4.jpg></a>" <<
+    "        <label for=\"vote\">Strawberry</label>\n" <<
+    "        <input name=\"vote\" value=\"S\" type=\"radio\"></td><br>\n" <<
+    "        <label for=\"vote\">Pineapple</label>\n" <<
+    "        <input name=\"vote\" value=\"P\" type=\"radio\"></td><br>\n" <<
+    "        <label for=\"vote\">Grape</label>\n" <<
+    "        <input name=\"vote\" value=\"G\" type=\"radio\"></td><br>\n" <<
+    "        <label for=\"vote\">Watermelon</label>\n" <<
+    "        <input name=\"vote\" value=\"W\" type=\"radio\"></td><br>\n" <<
+    "        <label for=\"vote\">Durian</label>\n" <<
+    "        <input name=\"vote\" value=\"D\" type=\"radio\"></td><br>\n" <<
+    "        <label for=\"vote\">None</label>\n" <<
+    "        <input name=\"vote\" value=\"N\" type=\"radio\"></td><br>\n" <<
+    "    <p><input type=\"submit\" value=\"Submit\">\n" <<
+    "</form>\n" <<
+    "</body>\n" <<
+    "</html>\n";
 }
 
-void enter_data(int* fun_dyn_array, int fun_students)
-//dyn_array declare is int********* and dyn_array is a dynmically array
+string prepare_vote(int f_cnt)
 {
-    int moive_number;
-    int* enter_data_tem_array = fun_dyn_array;
-    for(int i=0; i < fun_students; i++)//arrary form 0,but output from 1
-    {
-        int number = i+1;//arrary form 0,but output from 1
-        cout << "How much moive number the No " << number <<" student had seen:";
-        cin >>moive_number;
-        
-        /*
-        if(moive_number <0 | moive_number >100)//  0 <= number <= 100
-        {
-            cout << "moive number must more or equal to 0, and less or equal to 100" << "\n";
-            cout << "How much moive number the No." << number <<" student had seen:";
-            cin >> moive_number;
-        }
-        //not use if loop, becasue if you input more times,
-        //the number will get your input
-        //this is not follow the require
-        */
-        while (moive_number <0 | moive_number >100)
-        {
-            cout << "moive number must more or equal to 0, and less or equal to 100" << "\n";
-            cout << "How much moive number the No." << number <<" student had seen:";
-            cin >> moive_number;
-        }
-        //in for loop, we need put our input into array
-        *fun_dyn_array = moive_number;
-        //to next index array
-        fun_dyn_array++;
-    }
-    fun_dyn_array = enter_data_tem_array;
-    //declare the array and in to fun_dyn_array and return
-    //Void function 'enter_data' should not return a value
-    //had into array, needn't return
-    //return fun_dyn_array;
-}
-
-float find_average(int* fun_dyn_array, int fun_students)
-// float needed
-//dyn_array declare is int********* and dyn_array is a dynmically array
-{
-    float fun_avrg;
-    float all_number =0;
-    for (int i=0; i < fun_students; i++)//arrary form 0,but output from 1
-    //add all array value number
-    {
-        all_number += *fun_dyn_array;//dont forget we need pointer array
-        fun_dyn_array++;//to next array index
-    }
-    fun_avrg = all_number/fun_students;
-    return fun_avrg;
-}
-
-void show_array(int* fun_dyn_array, int fun_students)
-{
-    int show_array_number;
-    for (int i=0; i < fun_students; i++)//arrary form 0,but output from 1
-    {
-        int number = i+1;//arrary form 0,but output from 1
-        show_array_number = * fun_dyn_array;
-        cout << "The No."<< number << " student had seen:"<< show_array_number << "\n";
-        fun_dyn_array++;//to next array index
-    }
-}
-
+    //string vote;
+    //create dynamic array name_value_pairs[] from the wo object
+    //as done earlier
+    FIELDS * name_value_pairs = wo.create_array(wo.get_cnt());
+    //wo.create_array(wo.get_cnt());
+    //parse qs into name_value_pairs[] array from the wo object
+    //as done earlier
+    wo.parse(wo.get_qs(), name_value_pairs);
+    //param the vote field value into variable 'vote' from the wo object
+    //as done earlier
+    wo.param("vote", name_value_pairs, wo.get_cnt());
+    string vote = wo.param("vote", name_value_pairs, wo.get_cnt());
+    cout << "debug with vote: " << name_value_pairs[0].value << "<br>" << endl;
     
+    return  vote + "|\n";    //the new line character will put each vote
+    //on a new line in the file
+    //ex of a concatenated vote: "y|\n"
+    /*
+    Normally, this line of data would contain more fields, which would
+    commonly be separated by pipes, like:
+    
+    "y|Fred|Flintstone|\n" - represents data for three fields.
+        
+        Therefore, even if we use only one
+            field this time, we remain consistent with the protocol.
+     */
+}
 
 
+int * create_int_array (int f_cnt)
+{
+    int * address;
+    address = new int[fo.get_survey_txt_cnt()];
+    return address;
+}
 
 
-
+void display_result(string f_data_array[])
+{
+    //function flow:
+    // initialize a dynamic array (vote_tally_array) from function
+    int * vote_tally_array = new int[6];
+    
+    // create_int_array() which returns a pointer to an array with number of
+    // elements equal to the number of possible (different) choices of votes:
+    //    For example, Y or N will require a  vote_tally_array of 2 elements
+    
+    int * data_array = create_int_array(6);
+    //initialize vote_tally_array to 0’s in a loop
+    
+    for (int i =0; i <= 5;i++)
+    {
+        vote_tally_array[i] = 0;
+    }\
+    
+    
+    //In another loop, increment vote_tally_array from f_data_array[]
+    // vote will need to be extracted from its pipe symbol separator
+    // if vote == "Y" then vote_tally_array[0]++
+    // else if vote == "N" then vote_tally_array[1]++
+    
+    
+    int choice = fo.get_survey_txt_cnt();
+    for (int i = 0;i < choice; i++)
+    {
+        //f_data_array = fo.get_data_array();
+        string vote = f_data_array[i].substr(0,1);
+        cout << i << " is " << vote << "\n" <<"<br>";
+        if (vote == "S")
+        {
+            vote_tally_array[0]++;
+        }
+        else if (vote == "P")
+        {
+            vote_tally_array[1]++;
+        }
+        else if (vote == "G")
+        {
+            vote_tally_array[2]++;
+        }
+        else if (vote == "W")
+        {
+            vote_tally_array[3]++;
+        }
+        else if (vote == "D")
+        {
+            vote_tally_array[4]++;
+        }
+        else if (vote == "N")
+        {
+            vote_tally_array[5]++;
+        }
+    }
+    
+    
+    //print the results
+    cout << "<h1> results show \n </h1>";
+    cout << "<p>Strawberry is: " << vote_tally_array[0] <<"    percentage: "<< 100.00*vote_tally_array[0]/choice << "%"<< "\n";
+    cout << "<p>Pineapple is: " << vote_tally_array[1] <<"    percentage: "<< 100.00*vote_tally_array[1]/choice << "%"<< "\n";
+    cout << "<p>Grape is: " << vote_tally_array[2] <<"    percentage: "<< 100.00*vote_tally_array[2]/choice << "%"<< "\n";
+    cout << "<p>Watermelon is: " << vote_tally_array[3] <<"    percentage: "<< 100.00*vote_tally_array[3]/choice << "%"<< "\n";
+    cout << "<p>Durian is: " << vote_tally_array[4] <<"    percentage: "<< 100.00*vote_tally_array[4]/choice << "%"<< "\n";
+    cout << "<p>None is: " << vote_tally_array[5] <<"    percentage: "<< 100.00*vote_tally_array[5]/choice << "%"<< "\n";
+    cout << "<p><b><a href=""http:""//toolkit.cs.ohlone.edu/~gen232/survey.txt"">" << "Results" << "</a></b></p>" << "\n";
+}
